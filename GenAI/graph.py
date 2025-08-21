@@ -1,18 +1,15 @@
 import pandas as pd
 import streamlit as st
 from langchain.sql_database import SQLDatabase
-from langchain.agents import create_sql_agent, AgentType
+from langchain.agents import create_sql_agent
 from langchain.agents.agent_toolkits import SQLDatabaseToolkit
 from langchain.agents.agent_types import AgentType
-from io import StringIO, BytesIO
+from io import BytesIO
 import os
-from langchain_openai import AzureChatOpenAI
 import matplotlib
-import matplotlib.pyplot as plt
 matplotlib.use('Agg')
-import re
-import psycopg2
-from langchain_experimental.agents  import  create_pandas_dataframe_agent, create_csv_agent
+from sqlalchemy import create_engine
+from langchain_experimental.agents import create_pandas_dataframe_agent
 import base64
 
 # custom imports
@@ -95,15 +92,23 @@ def sql_agent():
     return sql_agent
 
 def python_agent():
-    conn = psycopg2.connect(
-    host=db_host,
-    database=db_name,
-    user=db_user,
-    password=db_password
-    )
-    
-    df_config = pd.read_sql("SELECT * from sales_data", conn)
-    df_plant = pd.read_sql("SELECT * from sales_data_plant", conn)
+    """Create a pandas agent backed by the public SQL engine.
+
+    The previous implementation expected separate database credentials
+    (``db_host``, ``db_name`` etc.) which were never defined in this
+    module.  This resulted in a ``NameError`` as soon as the function was
+    called.  Instead we reuse ``engine_string_public`` – already imported
+    from ``config`` – to establish the connection.  Using SQLAlchemy also
+    keeps the connection logic in line with how the SQL agent is created
+    above.
+    """
+
+    # Create a SQLAlchemy engine from the shared connection string
+    engine = create_engine(engine_string_public)
+
+    # Load the required tables into pandas DataFrames
+    df_config = pd.read_sql("SELECT * from sales_data", engine)
+    df_plant = pd.read_sql("SELECT * from sales_data_plant", engine)
 
     # csv_agent = create_csv_agent(llm, "your_data.csv", verbose=True)
     python_agent = create_pandas_dataframe_agent(llm, 
