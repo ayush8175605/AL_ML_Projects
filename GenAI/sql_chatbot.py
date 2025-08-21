@@ -96,7 +96,7 @@ def conversational_chat(question):
                     3) Use appropriate filtering, aggregation, and sorting functions to generate insightful results.
                     4) Ensure all queries are correctly formatted and optimized for a PostgreSQL database.
                     5) Be proactive in ensuring the accuracy of your SQL statements and handle any edge cases the user might ask about.
-                    6) Show all the financial metrics in unit of Rupees. USe the correct symbols and units."""
+                    6) Show all the financial metrics in unit of Rupees. Use the correct symbols and units."""
 
     # Create the SQL toolkit
     toolkit = SQLDatabaseToolkit(db=db, llm=llm)
