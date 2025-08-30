@@ -5,10 +5,10 @@ import plotly.graph_objects as go
 import plotly.io as pio
 import pandas as pd
 
-project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
-sys.path.insert(0, project_root)
+# project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
+# sys.path.insert(0, project_root)
 
-from AL_ML_Projects.bsa_tournament_scheduler.players_info import players_info
+from players_info import players_info
 import streamlit as st
 
 @st.cache_data
