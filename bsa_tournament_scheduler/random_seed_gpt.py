@@ -2,7 +2,7 @@ import random
 import os
 import sys
 import plotly.graph_objects as go
-import plotly.io as pio
+# import plotly.io as pio
 import pandas as pd
 
 # project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
@@ -11,14 +11,14 @@ import pandas as pd
 from players_info import players_info
 import streamlit as st
 
-@st.cache_data
-def fig_to_bytes(fig, fmt="png", scale=2, width=None, height=None):
-    """
-    Convert a Plotly figure to image bytes with kaleido.
-    fmt: "png" | "svg" | "pdf"
-    scale >1 = higher DPI; width/height override figure size (pixels).
-    """
-    return pio.to_image(fig, format=fmt, scale=scale, width=width, height=height)
+# @st.cache_data
+# def fig_to_bytes(fig, fmt="png", scale=2, width=None, height=None):
+#     """
+#     Convert a Plotly figure to image bytes with kaleido.
+#     fmt: "png" | "svg" | "pdf"
+#     scale >1 = higher DPI; width/height override figure size (pixels).
+#     """
+#     return pio.to_image(fig, format=fmt, scale=scale, width=width, height=height)
 
 def generate_draw_seeded(
     seeds,        # 16 names, ordered by rank: seeds[0] is rank 1 ... seeds[15] is rank 16
@@ -565,15 +565,15 @@ if st.session_state.get('simulated', False):
     export_width = 1800
     export_height = fig.layout.height or 1200
 
-    png_bytes = fig_to_bytes(fig, fmt="png", scale=2, width=export_width, height=export_height)
+    # png_bytes = fig_to_bytes(fig, fmt="png", scale=2, width=export_width, height=export_height)
     # svg_bytes = fig_to_bytes(fig, fmt="svg", width=export_width, height=export_height)
     # csv_data = make_draw_csv(st.session_state.draw, seeds=seeded)
+    html_bytes = fig.to_html(full_html=False).encode("utf-8")
     st.download_button(
-        "⬇️ Download Bracket (PNG)",
-        data=png_bytes,
-        file_name=f"{disc_key}_bracket.png",
-        mime="image/png",
-        use_container_width=True,
+        "⬇️ Download Bracket (HTML)",
+        data=html_bytes,
+        file_name=f"{disc_key}_bracket.html",
+        mime="text/html"
     )
     #
     # roster_button = st.button("Show Player Roster", use_container_width=True)
