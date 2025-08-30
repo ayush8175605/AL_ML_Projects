@@ -6,3 +6,4 @@ seaborn
 protobuf
 plotly
 kaleido
+plotly_get_chrome
