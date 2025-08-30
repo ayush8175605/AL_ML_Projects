@@ -1,7 +1,6 @@
 matplotlib
 langchain
 SQLAlchemy
-sklearn
 scikit-learn
 seaborn
 protobuf
