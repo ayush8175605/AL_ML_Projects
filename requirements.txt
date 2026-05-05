@@ -7,3 +7,4 @@ protobuf
 plotly
 openai
 google-auth
+python-dotenv

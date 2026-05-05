@@ -1,10 +1,9 @@
 import streamlit as st
 from streamlit.components.v1 import html
 
-from AL_ML_Projects.GenAI.editor_sample_proj.backend import stream_text_streamlit
-from AL_ML_Projects.GenAI.editor_sample_proj.frontend import auth_page
 from backend import ChatConversationMemory, chatbot, chatbot_stream, proofreader, summarizer, detect_styles, \
-    rewrite_in_style, reader_reactions_func, expert_review, on_text_change, writing_agent
+    rewrite_in_style, reader_reactions_func, expert_review, on_text_change, writing_agent, stream_text_streamlit
+from frontend import auth_page
 from copy import deepcopy
 from prompts import main_prompt
 
@@ -169,7 +168,7 @@ if summarize_clicked and st.session_state.full_text.strip():
     st.markdown(
         "Click on the button below to clear this summary, or click on the other widgets to enjoy different functionalities!")
     if st.button("End Session!"):
-        summarized_clicked = False
+        summarize_clicked = False
         st.rerun()
 
 # --- Rewrite Logic ---
@@ -474,7 +473,7 @@ if experts_review and st.session_state.full_text.strip():
     st.markdown(
         "Click on the button below to clear this experts review section, or click on the other widgets to enjoy different functionalities!")
     if st.button("End Session!"):
-        readers_reaction = False
+        experts_review = False
         st.rerun()
 # st.markdown("✂️ *Optional:* Paste or type a section you want to focus on below:")
 # selected_text = st.text_input("Selected portion (optional):")

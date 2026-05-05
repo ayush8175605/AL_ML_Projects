@@ -1,10 +1,10 @@
 import random
 import time
 import streamlit as st
-from AL_ML_Projects.GenAI.editor_sample_proj.backend import ChatConversationMemory
-from AL_ML_Projects.GenAI.editor_sample_proj.db_utils import verify_user, check_username_exists, check_email_exists, \
+from backend import ChatConversationMemory
+from db_utils import verify_user, check_username_exists, check_email_exists, \
     add_user_to_system, send_invitation_email, get_user_by_email, send_otp, update_password
-from AL_ML_Projects.GenAI.editor_sample_proj.prompts import main_prompt
+from prompts import main_prompt
 
 
 def auth_page():

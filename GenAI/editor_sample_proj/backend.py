@@ -6,7 +6,7 @@ from google.auth import default
 import google.auth.transport.requests
 from typing import Generator
 # from langchain_core.output_parsers import JsonOutputParser
-from AL_ML_Projects.GenAI.editor_sample_proj.prompts import proofreading_prompt, summarizer_prompt, \
+from prompts import proofreading_prompt, summarizer_prompt, \
     style_detector_prompt, rewrite_prompt, reader_prompt, expert_sel_prompt, intermediate_system_prompt, \
     main_prompt, discriminator_prompt
 import json
@@ -292,84 +292,6 @@ def expert_review(full_text):
     # print(response)
     return json_res
 
-# def proofreader_1(fful):
-#     messages = [{"role": "system", "content": proofreading_prompt}]
-#     # parser=JsonOutputParser()
-#     try:
-#         proofreading_response = client_1.chat.completions.create(
-#             model="google/gemini-2.5-flash",
-#             messages=messages,
-#         ).choices[0].message.content
-#     except Exception as e:
-#         return {"error": str(e)}
-#     print(proofreading_response)
-#     json_res, cleaned_json = extract_json_from_text(proofreading_response)
-#     return json_res
-#
-# def summarizer_1(full_text):
-#     messages = [{"role":"system", "content": summarizer_prompt}, {"role":"user", "content": f"Here's the text I want you to examine: {full_text}."}]
-#     try:
-#         summary_response = client_1.chat.completions.create(
-#             model="google/gemini-2.5-flash",
-#             messages=messages,
-#         ).choices[0].message.content
-#     except Exception as e:
-#         return {"error": str(e)}
-#     print(summary_response)
-#     json_res, cleaned_json = extract_json_from_text(summary_response)
-#     return json_res
-#
-# def reader_reactions_func_1(full_text):
-#     messages = [{"role": "system", "content": reader_prompt},
-#                 {"role": "user", "content": f"Here's the text I want you to examine: {full_text}."}]
-#     try:
-#         read_response = client_1.chat.completions.create(
-#             model="google/gemini-2.5-flash",
-#             messages=messages,
-#         ).choices[0].message.content
-#     except Exception as e:
-#         return {"error": str(e)}
-#
-#     print(read_response)
-#     json_res, cleaned_json = extract_json_from_text(read_response)
-#     return json_res
-#
-# def expert_review_1(full_text):
-#     messages = [{"role": "system", "content": expert_sel_prompt},
-#                 {"role": "user", "content": f"Here's the text I want you to examine: {full_text}."}]
-#
-#     try:
-#         expert_response = client_1.chat.completions.create(
-#             model="google/gemini-2.5-flash",
-#             messages=messages,
-#         ).choices[0].message.content
-#     except Exception as e:
-#         print(e)
-#         return
-#
-#     print(expert_response)
-#     json_res, cleaned_json = extract_json_from_text(expert_response)
-#     response={}
-#     if "experts" not in response:
-#         response["experts"] = json_res
-#
-#     messages_rewrite = [{"role": "system", "content": rewrite_expert(expert_response)},
-#                 {"role": "user", "content": f"Here's the text I want you to examine: {full_text}."}]
-#     try:
-#         rewrite = client_1.chat.completions.create(
-#             model="google/gemini-2.5-flash",
-#             messages=messages_rewrite,
-#         ).choices[0].message.content
-#     except Exception as e:
-#         print(e)
-#         return
-#
-#     if "rewrite" not in response:
-#         response['rewrite'] = rewrite
-#
-#     print(response)
-#     return response
-
 def detect_styles(full_text):
     messages = [{"role": "system", "content": style_detector_prompt},
                 {"role": "user", "content": f"Here's the text I want you to examine: {full_text}."}]
@@ -560,7 +482,7 @@ def writing_agent(chat_history):
                         result = f"Tool Execution Failed: {fn_name} ({e})"
                     finally:
                         memory.add_assistant_tool_call(fn_name, json.dumps(args), tool_call_id)
-                        memory.add_tool_result(fn_name, tool_call_id, str(result))
+                        memory.add_tool_result(str(result), fn_name, tool_call_id)
                         print(f"Tool called: {fn_name} with result: {result}")
 
                 else:
@@ -588,71 +510,3 @@ def stream_text_streamlit(text: str, delay: float = 0.01):
         placeholder.markdown(streamed)
         time.sleep(delay)
 
-full_text = """
-“Who are you?!” A voice echoed in the empty warehouse. Moonlight streamed through a distant crack in the wall, illuminating the entire space. Below the window, broken glass shards glistened. The warehouse reeked of rotten chemicals and dirt, clinging to cardboard boxes stacked at the far end.
-
-
-“You don’t know me?” A woman appeared from behind the crates. She was wearing a black-and-red suit and a cat mask. She clicked her heels against the tiles and pushed the man down with her hands. He groaned and screamed as he hit the ground, “Aaah, bhenchod!”
-
-
-“You know, Prakriti is very upset. You stole the drugs from her,” she barked, clicking her tongue and grabbing him by his shirt.
-
-
-“Nat… Nat, I am sorry. I didn’t mean to. I’m sorry, I’m so sorry!” he pleaded, sweat dripping down his face, his legs trembling, and his hands trying to grab at her feet.
-
-
-She pulled herself away, tsking vehemently. “Arre, ab kya fyada!”
-
-
-“Pls… pls, mujhe bacha lo! I’ll not tell anyone anything, I promise!”
-
-
-She laughed lightly, tapping his chin. Then, her expression turned serious. “Accha, ok, no issues. Tell me, how do you want to go? Knife? Gun? You choose!”
-
-
-“Please… please, I beg you. Don’t do this,” he winced as she pressed her heel onto his chest, shushing him. “Don’t worry, it’ll be over soon.”
-
-
-He kicked her in the abdomen, desperate to escape. She stumbled back against a crate, pills scattering around them. He scrambled to his feet, huffing hard, his eyes darting around the empty warehouse for anything to fight back with. But destiny had other plans for him.
-
-She drew her gun and fired. The bullet tore into his leg, sending him tumbling, crashing into splintered crates. He cried out, cursing under his breath. She followed, shaking her head lightly. “You’re wasting both our time, Neeraj!” she growled, grinding her heel into his fresh wound.
-
-
-He groaned in pain, “AAAH!” She continued twisting her heel, her expression grim. “Come on, tell me. I’m waiting for an answer!” He screamed in pain as she smiled. “Knife it is, then!” she declared, strangling him from behind.
-
-
-She drew a knife from her right pocket and plunged it into his neck, slowly slitting his throat. Blood splattered and gurgled from the wound. His face slackened, expressionless, as life drained from him. His body fell to the ground with a thud. She hovered over his body, wiping the sweat from her brow and the bloodstains from her mask and dress. Then, she cleaned her knife with her gloved hand.
-
-
-She took out her phone and dialled a number. The call connected, and she spoke in a hushed tone. “Neeraj ko thikane laga diya, Prakriti.”
-
-
-“Good, Nat. Good. I’ll send Bala to clean up the scene. Tu nikal ja waha se.” 
-
-
-“Hmm, theek hai, chal, bye,” she replied, ending the call and beginning to walk towards the exit. She lowered her mask, removed the costume and sat in her car. The road was empty, apart from some stray dogs barking in the distance. Her face bore marks near her nose and a small scar near her ear. The strap of her mask was red with blood. 
-"""
-
-# review = expert_review(full_text)
-# print(review)
-
-# chat_memory = ChatConversationMemory(main_prompt)
-# chat_memory.add_text("""As he reached the third floor, he heard her voice. “Vikram? Is that you?”
-#
-# He froze, a sigh escaping his lips. No luck. He turned slowly, forcing a neutral expression onto his face. Naina had left the lift, her impatient tapping replaced by a slight frown as she looked at him. Her eyes narrowed, tracing the crimson stains on his shirt, the faint cuts on his knuckles, and then, most notably, the damp patch on the back of his shoulder where the glass shard had been.
-#
-# “What happened to you, for God’s sake?” she asked, correcting the pallu of her saree, her voice laced with genuine concern, a stark contrast to her earlier frustration. “You look like you’ve been run over by a truck. And is that… blood?”
-#
-# Vik shrugged, trying to appear nonchalant. “Just a small tumble. Nothing to worry about.” He started to turn again, hoping to end this conversation as soon as possible.
-#
-# But Naina was already moving, closing the distance between them. “A tumble? With blood on your shirt and that nasty bruise on your jaw? Don’t be ridiculous, Vikram. Let me see that back.” She reached out, her fingers hovering near his shoulder.
-# """)
-#
-# while True:
-#     text_input = input("Enter your question: ")
-#     chat_memory.add_user(text_input)
-#     reply = writing_agent(chat_memory)
-#     chat_memory.add_assistant(reply)
-#     if text_input=='End':
-#         break
-#

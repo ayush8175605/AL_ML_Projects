@@ -1,23 +1,43 @@
+import os
+import hashlib
+import secrets
 import psycopg2
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 import smtplib, ssl
+from dotenv import load_dotenv
+
+load_dotenv()
 
 def get_connection():
-    # 🔹 Update with your actual credentials
     return psycopg2.connect(
-        host="localhost",
-        dbname="postgres",
-        user="postgres",
-        password="ayush1012",
-        port=5432
+        host=os.getenv("DB_HOST", "localhost"),
+        dbname=os.getenv("DB_NAME", "postgres"),
+        user=os.getenv("DB_USER", "postgres"),
+        password=os.getenv("DB_PASSWORD"),
+        port=int(os.getenv("DB_PORT", 5432))
     )
+
+def _hash_password(password: str) -> str:
+    salt = secrets.token_hex(16)
+    hashed = hashlib.sha256((salt + password).encode()).hexdigest()
+    return f"{salt}${hashed}"
+
+def _verify_password(password: str, stored: str) -> bool:
+    if "$" not in stored:
+        # Legacy plain-text — force password reset flow
+        return False
+    salt, hashed = stored.split("$", 1)
+    return hashlib.sha256((salt + password).encode()).hexdigest() == hashed
 
 def add_user_to_system(username, password, email):
     conn = get_connection()
     cursor = conn.cursor()
     try:
-        cursor.execute("INSERT INTO writerai.users (username, password, email) VALUES (%s, %s, %s)", (username, password, email))
+        cursor.execute(
+            "INSERT INTO writerai.users (username, password, email) VALUES (%s, %s, %s)",
+            (username, _hash_password(password), email)
+        )
         conn.commit()
         return True
     except psycopg2.IntegrityError:
@@ -29,15 +49,20 @@ def add_user_to_system(username, password, email):
 def verify_user(username, password):
     conn = get_connection()
     cursor = conn.cursor()
-    cursor.execute("SELECT * FROM writerai.users WHERE (username=%s OR email=%s) AND password=%s", (username, username, password))
+    cursor.execute(
+        "SELECT password FROM writerai.users WHERE (username=%s OR email=%s)",
+        (username, username)
+    )
     result = cursor.fetchone()
     conn.close()
-    return result is not None
+    if not result:
+        return False
+    return _verify_password(password, result[0])
 
 def check_username_exists(username):
     conn = get_connection()
     cursor = conn.cursor()
-    cursor.execute("SELECT * FROM writerai.users WHERE username=%s", (username,))
+    cursor.execute("SELECT 1 FROM writerai.users WHERE username=%s", (username,))
     result = cursor.fetchone()
     conn.close()
     return result is not None
@@ -45,7 +70,7 @@ def check_username_exists(username):
 def check_email_exists(email):
     conn = get_connection()
     cursor = conn.cursor()
-    cursor.execute("SELECT * FROM writerai.users WHERE email=%s", (email,))
+    cursor.execute("SELECT 1 FROM writerai.users WHERE email=%s", (email,))
     result = cursor.fetchone()
     conn.close()
     return result is not None
@@ -53,17 +78,29 @@ def check_email_exists(email):
 def update_password(username, new_password):
     conn = get_connection()
     cursor = conn.cursor()
-    cursor.execute("UPDATE writerai.users SET password=%s WHERE username=%s", (new_password, username))
+    cursor.execute(
+        "UPDATE writerai.users SET password=%s WHERE username=%s",
+        (_hash_password(new_password), username)
+    )
     conn.commit()
     rows_affected = cursor.rowcount
     conn.close()
     return rows_affected > 0
 
+def _send_email(to_email: str, subject: str, html: str):
+    sender = os.getenv("GMAIL_SENDER")
+    password = os.getenv("GMAIL_APP_PASSWORD")
+    msg = MIMEMultipart("alternative")
+    msg["Subject"] = subject
+    msg["From"] = sender
+    msg["To"] = to_email
+    msg.attach(MIMEText(html, "html"))
+    context = ssl.create_default_context()
+    with smtplib.SMTP_SSL("smtp.gmail.com", 465, context=context) as server:
+        server.login(sender, password)
+        server.sendmail(sender, to_email, msg.as_string())
+
 def send_otp(email, otp):
-    sender = "noreply.writerai.thinkchat@gmail.com"
-    password = "twjd wkim xypg tfqf"  # Use Gmail App Password
-    subject = "WriterAI Password Reset Verification Code"
-    # HTML version of email
     html = f"""
         <html>
         <body style="font-family: Arial, sans-serif; color: #333;">
@@ -76,27 +113,14 @@ def send_otp(email, otp):
             <br>
             <p>—<br><b>WriterAI Team</b><br>
             ThinkChat Technologies<br>
-            <a href="mailto:noreply.writerai.thinkchat@gmail.com">noreply.writerai.thinkchat@gmail.com</a></p>
+            <a href="mailto:{os.getenv('GMAIL_SENDER')}">{os.getenv('GMAIL_SENDER')}</a></p>
         </body>
         </html>
         """
-
-    msg = MIMEMultipart("alternative")
-    msg["Subject"] = subject
-    msg["From"] = sender
-    msg["To"] = email
-    msg.attach(MIMEText(html, "html"))
-
-    context = ssl.create_default_context()
-    with smtplib.SMTP_SSL("smtp.gmail.com", 465, context=context) as server:
-        server.login(sender, password)
-        server.sendmail(sender, email, msg.as_string())
+    _send_email(email, "WriterAI Password Reset Verification Code", html)
 
 def send_invitation_email(email, username):
-    sender = "noreply.writerai.thinkchat@gmail.com"
-    password = "twjd wkim xypg tfqf"  # Gmail App Password
-    subject = "🎉 Welcome to WriterAI!"
-
+    sender = os.getenv("GMAIL_SENDER")
     html = f"""
     <html>
     <body style="font-family: Arial, sans-serif; color: #333; background-color: #fafafa; padding: 20px;">
@@ -110,7 +134,7 @@ def send_invitation_email(email, username):
             <p>Hi <b>{username}</b>, 👋</p>
 
             <p>Welcome to <b>WriterAI</b> — your new creative companion powered by <b>ThinkChat</b>!</p>
-            <p>We’re thrilled to have you on board. You can now explore WriterAI to:</p>
+            <p>We're thrilled to have you on board. You can now explore WriterAI to:</p>
 
             <ul>
                 <li>💡 Write, edit, and refine your text instantly</li>
@@ -119,9 +143,9 @@ def send_invitation_email(email, username):
                 <li>✍️ Collaborate naturally with AI like never before</li>
             </ul>
 
-            <p>We’re constantly improving WriterAI to help you write better and faster. Stay tuned for upcoming features and updates.</p>
+            <p>We're constantly improving WriterAI to help you write better and faster. Stay tuned for upcoming features and updates.</p>
 
-            <p>If you have any questions or suggestions, just reply to this email — we’d love to hear from you!</p>
+            <p>If you have any questions or suggestions, just reply to this email — we'd love to hear from you!</p>
 
             <br>
             <p>Warm regards,<br><b>The WriterAI Team</b><br>
@@ -129,27 +153,15 @@ def send_invitation_email(email, username):
 
             <hr style="border: none; border-top: 1px solid #eee; margin-top: 30px;">
             <p style="font-size: 12px; color: #777; text-align: center;">
-                You’re receiving this email because you recently created an account on WriterAI.<br>
-                If this wasn’t you, please ignore this message.<br><br>
-                ✉️ <a href="mailto:noreply.writerai.thinkchat@gmail.com" style="color:#0073e6;">noreply.writerai.thinkchat@gmail.com</a>
+                You're receiving this email because you recently created an account on WriterAI.<br>
+                If this wasn't you, please ignore this message.<br><br>
+                ✉️ <a href="mailto:{sender}" style="color:#0073e6;">{sender}</a>
             </p>
         </div>
     </body>
     </html>
     """
-
-    msg = MIMEMultipart("alternative")
-    msg["Subject"] = subject
-    msg["From"] =sender
-    msg["To"] = email
-
-    msg.attach(MIMEText(html, "html"))
-
-    context = ssl.create_default_context()
-    with smtplib.SMTP_SSL("smtp.gmail.com", 465, context=context) as server:
-        server.login(sender, password)
-        server.sendmail(sender, email, msg.as_string())
-
+    _send_email(email, "🎉 Welcome to WriterAI!", html)
 
 def get_user_by_email(email):
     conn = get_connection()
